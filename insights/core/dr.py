@@ -424,6 +424,26 @@ def get_dependency_specs(component):
     return get_requires(component) + get_at_least_one(component)
 
 
+def get_spec_name(c):
+    """
+    Query the actual registry point spec name, by looping through the
+    dependent components and checking if the component class type is
+    RegistryPoint and return the name.
+    """
+    if type(c).__name__ == "RegistryPoint":
+        return get_name(c)
+
+    for cmp in get_dependents(c):
+        if type(cmp).__name__ == "RegistryPoint":
+            return get_name(cmp)
+
+        ret = get_spec_name(cmp)
+        if ret:
+            return ret
+
+    return get_name(c)
+
+
 def get_subgraphs(graph=None):
     """
     Given a graph of possibly disconnected components, generate all graphs of
