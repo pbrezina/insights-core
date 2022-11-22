@@ -200,12 +200,8 @@ class Hydration(object):
             name = dr.get_name(comp)
 
             # The `broker.tracebacks` is a dict in which the values are string
-            # but not list of strings. For datasource timeouts the key is the
-            # name of the component instead of the component itself. So if no
-            # exceptions are found with the component itself as the key, check
-            # if they're any with the name as the key.
-            errors = [broker.tracebacks[e] for e in
-                      broker.exceptions.get(comp, broker.exceptions.get(dr.get_spec_name(comp), []))]
+            # but not list of strings.
+            errors = [broker.tracebacks[e] for e in broker.exceptions.get(comp, [])]
 
             start = time.time()
             results, ms_errors = marshal(comp, broker, root=self.data, pool=self.pool)

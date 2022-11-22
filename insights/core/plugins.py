@@ -105,15 +105,22 @@ class datasource(PluginType):
             return self.component(broker)
         except ContentException as ce:
             log.debug(ce)
-            broker.add_exception(dr.get_spec_name(self.component), ce, traceback.format_exc())
+            ce_tb = traceback.format_exc()
+            for reg_spec in dr.get_registry_points(self.component):
+                broker.add_exception(reg_spec, ce, ce_tb)
             raise dr.SkipComponent()
         except CalledProcessError as cpe:
             log.debug(cpe)
-            broker.add_exception(dr.get_spec_name(self.component), cpe, traceback.format_exc())
+            cpe_tb = traceback.format_exc()
+            for reg_spec in dr.get_registry_points(self.component):
+                broker.add_exception(reg_spec, cpe, cpe_tb)
             raise dr.SkipComponent()
         except TimeoutException as te:
             log.debug(te)
-            broker.add_exception(dr.get_spec_name(self.component), te, traceback.format_exc())
+            te_tb = traceback.format_exc()
+            print(dr.get_name(self.component))
+            for reg_spec in dr.get_registry_points(self.component):
+                broker.add_exception(reg_spec, te, te_tb)
             raise dr.SkipComponent()
         finally:
             signal.alarm(0)

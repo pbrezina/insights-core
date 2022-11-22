@@ -424,24 +424,33 @@ def get_dependency_specs(component):
     return get_requires(component) + get_at_least_one(component)
 
 
-def get_spec_name(c):
+def is_registry_point(component):
+    return type(component).__name__ == "RegistryPoint"
+
+
+def get_registry_points(component):
+    """Loop through the dependency graph to identify the corresponding
+    spec registry points for the component. This is primarily used by datasources
+    and returns a `set`. In most cases only one registry point will be included
+    in the set, but in some cases more than one.
+
+    Args:
+        component (callable): The component object
     """
-    Query the actual registry point spec name, by looping through the
-    dependent components and checking if the component class type is
-    RegistryPoint and return the name.
-    """
-    if type(c).__name__ == "RegistryPoint":
-        return get_name(c)
+    reg_points = set()
 
-    for cmp in get_dependents(c):
-        if type(cmp).__name__ == "RegistryPoint":
-            return get_name(cmp)
+    if is_registry_point(component):
+        reg_points.add(component)
+    else:
+        for dep in get_dependents(component):
+            if is_registry_point(dep):
+                reg_points.add(dep)
+            else:
+                dep_reg_pts = get_registry_points(dep)
+                if dep_reg_pts:
+                    reg_points.update(dep_reg_pts)
 
-        ret = get_spec_name(cmp)
-        if ret:
-            return ret
-
-    return get_name(c)
+    return reg_points
 
 
 def get_subgraphs(graph=None):
