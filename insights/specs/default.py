@@ -54,7 +54,7 @@ def _make_rpm_formatter(fmt=None):
             '"buildhost":"%{BUILDHOST}"',
             '"sigpgp":"%{SIGPGP:pgpsig}"'
         ]
-    return "\{" + ",".join(fmt) + "\}\n"
+    return "{" + ",".join(fmt) + "}\n"
 
 
 _etc_and_sub_dirs = sorted(["/etc", "/etc/pki/tls/private", "/etc/pki/tls/certs",
@@ -121,7 +121,7 @@ class DefaultSpecs(Specs):
     ceph_osd_ec_profile_ls = simple_command("/usr/bin/ceph osd erasure-code-profile ls")
     ceph_osd_tree = simple_command("/usr/bin/ceph osd tree -f json")
     ceph_v = simple_command("/usr/bin/ceph -v")
-    certificates_enddate = simple_command("/usr/bin/find /etc/origin/node /etc/origin/master /etc/pki /etc/ipa /etc/tower/tower.cert -type f -exec /usr/bin/openssl x509 -noout -enddate -in '{}' \; -exec echo 'FileName= {}' \;", keep_rc=True)
+    certificates_enddate = simple_command(r"/usr/bin/find /etc/origin/node /etc/origin/master /etc/pki /etc/ipa /etc/tower/tower.cert -type f -exec /usr/bin/openssl x509 -noout -enddate -in '{}' \; -exec echo 'FileName= {}' \;", keep_rc=True)
     cgroups = simple_file("/proc/cgroups")
     chkconfig = simple_command("/sbin/chkconfig --list")
     chrony_conf = simple_file("/etc/chrony.conf")
@@ -401,7 +401,7 @@ class DefaultSpecs(Specs):
     mssql_api_assessment = simple_file("/var/opt/mssql/log/assessments/assessment-latest")
     mssql_conf = simple_file("/var/opt/mssql/mssql.conf")
     mssql_tls_cert_enddate = command_with_args("/usr/bin/openssl x509 -in %s -enddate -noout", ssl_certificate.mssql_tls_cert_file)
-    multicast_querier = simple_command("/usr/bin/find /sys/devices/virtual/net/ -name multicast_querier -print -exec cat {} \;")
+    multicast_querier = simple_command(r"/usr/bin/find /sys/devices/virtual/net/ -name multicast_querier -print -exec cat {} \;")
     multipath__v4__ll = simple_command("/sbin/multipath -v4 -ll")
     multipath_conf = simple_file("/etc/multipath.conf")
     multipath_conf_initramfs = simple_command("/bin/lsinitrd -f /etc/multipath.conf")
@@ -614,7 +614,7 @@ class DefaultSpecs(Specs):
                                                 override_env={"LC_ALL": "C.UTF-8"})
     subscription_manager_id = simple_command("/usr/sbin/subscription-manager identity",  # use "/usr/sbin" here, BZ#1690529
                                              override_env={"LC_ALL": "C.UTF-8"})
-    subscription_manager_installed_product_ids = simple_command("/usr/bin/find /etc/pki/product-default/ /etc/pki/product/ -name '*pem' -exec rct cat-cert --no-content '{}' \;")
+    subscription_manager_installed_product_ids = simple_command(r"/usr/bin/find /etc/pki/product-default/ /etc/pki/product/ -name '*pem' -exec rct cat-cert --no-content '{}' \;")
     sudoers = glob_file(["/etc/sudoers", "/etc/sudoers.d/*"])
     swift_object_expirer_conf = first_file(["/var/lib/config-data/puppet-generated/swift/etc/swift/object-expirer.conf", "/etc/swift/object-expirer.conf"])
     swift_proxy_server_conf = first_file(["/var/lib/config-data/puppet-generated/swift/etc/swift/proxy-server.conf", "/etc/swift/proxy-server.conf"])

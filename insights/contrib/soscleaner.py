@@ -435,7 +435,7 @@ class SOSCleaner:
                     self.logger.con_out("Processing hosts file for better obfuscation coverage")
                     data = f.readlines()
                     for line in data:
-                        x = re.split('\ |\t', line.rstrip())    #chunk up the line, delimiting with spaces and tabs (both used in hosts files)
+                        x = re.split(r'\ |\t', line.rstrip())    #chunk up the line, delimiting with spaces and tabs (both used in hosts files)
                         # we run through the rest of the items in a given line, ignoring the IP to be picked up by the normal methods
                         # skipping over the 'localhost' and 'localdomain' entries
                         for item in x[1:len(x)]:
