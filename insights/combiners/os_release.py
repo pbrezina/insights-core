@@ -170,7 +170,6 @@ def _from_dmesg(dmesg):
                 release = rel
                 break
         return dict(other_linux=release, build_info=line)
-    # Not Sure
     return dict()
 
 
@@ -294,6 +293,13 @@ class OSRelease(object):
         Returns True if it's RHEL, False for NON-RHEL.
         """
         return self._release == 'RHEL'
+
+    @property
+    def is_convert2rhelable(self):
+        """
+        Returns whether we can run `convert2rhel` on it.
+        """
+        return self._release in OTHER_LINUX_KEYS  # implies not RHEL...
 
     @property
     def release(self):
