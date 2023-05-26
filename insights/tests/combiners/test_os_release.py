@@ -255,6 +255,8 @@ DMESG_REDHAT = """
 REDHAT_RELEASE_86 = "Red Hat Enterprise Linux release 8.6 (Ootpa)"
 REDHAT_RELEASE_FEDORA = "Fedora release 23 (Twenty Three)"
 REDHAT_RELEASE_UNKNOWN = "Test OS"
+REDHAT_RELEASE_CENTOS_7_9 = "CentOS Linux release 7.9.2009 (Core)"
+REDHAT_RELEASE_CENTOS_8_5 = "CentOS Linux release 8.5.2111"
 REDHAT_RELEASE_CENTOS_9STR = "CentOS Stream release 9"
 
 OS_RELEASE_RH = """
@@ -266,6 +268,38 @@ NAME="Oracle Linux Server"
 ID="ol"
 PRETTY_NAME="Red Hat Enterprise Linux"
 """.strip()
+OS_RELEASE_CENTOS_7_9 = """
+NAME="CentOS Linux"
+VERSION="7 (Core)"
+ID="centos"
+ID_LIKE="rhel fedora"
+VERSION_ID="7"
+PRETTY_NAME="CentOS Linux 7 (Core)"
+ANSI_COLOR="0;31"
+CPE_NAME="cpe:/o:centos:centos:7"
+HOME_URL="https://www.centos.org/"
+BUG_REPORT_URL="https://bugs.centos.org/"
+
+CENTOS_MANTISBT_PROJECT="CentOS-7"
+CENTOS_MANTISBT_PROJECT_VERSION="7"
+REDHAT_SUPPORT_PRODUCT="centos"
+REDHAT_SUPPORT_PRODUCT_VERSION="7"
+"""
+OS_RELEASE_CENTOS_8_5 = """
+NAME="CentOS Linux"
+VERSION="8"
+ID="centos"
+ID_LIKE="rhel fedora"
+VERSION_ID="8"
+PLATFORM_ID="platform:el8"
+PRETTY_NAME="CentOS Linux 8"
+ANSI_COLOR="0;31"
+CPE_NAME="cpe:/o:centos:centos:8"
+HOME_URL="https://centos.org/"
+BUG_REPORT_URL="https://bugs.centos.org/"
+CENTOS_MANTISBT_PROJECT="CentOS-8"
+CENTOS_MANTISBT_PROJECT_VERSION="8"
+"""
 OS_RELEASE_CENTOS_9STR = """
 NAME="CentOS Stream"
 VERSION="9"
@@ -542,64 +576,84 @@ def test_not_rhel_failures():
 
 def test_centos():
     # CentOS checks
-    dmesg = DmesgLineList(context_wrap(DMESG_CENTOS_7_9))
-    uname = Uname(context_wrap(UNAME_CENTOS_7_9))
-    result = OSRelease(None, dmesg, None, None, None)
+    dmesg7 = DmesgLineList(context_wrap(DMESG_CENTOS_7_9))
+    uname7 = Uname(context_wrap(UNAME_CENTOS_7_9))
+    rpms7 = InstalledRpms(context_wrap(RPMS_CENTOS_7_9_RAW))
+    rhrelease7 = RedhatRelease(context_wrap(REDHAT_RELEASE_CENTOS_7_9))
+    osrelease7 = OSReleaseParser(context_wrap(OS_RELEASE_CENTOS_7_9))
+    # dmesg alone is sufficient
+    result = OSRelease(None, dmesg7, None, None, None)
     assert not result.is_rhel
     assert result.is_convert2rhelable
     assert result.release == "CentOS"
     assert result.reasons['build_info'] == DMESG_CENTOS_7_9.splitlines()[3]
-    result = OSRelease(uname, dmesg, None, None, None)
+    # uname + dmesg is sufficient
+    result = OSRelease(uname7, dmesg7, None, None, None)
     assert not result.is_rhel
     assert result.is_convert2rhelable
     assert result.release == "CentOS"
     assert result.reasons['build_info'] == DMESG_CENTOS_7_9.splitlines()[3]
     # CentOS uname is exactly the same as RHEL - if that's all we have to go
     # on then we can't tell.
-    result = OSRelease(uname, None, None, None, None)
+    result = OSRelease(uname7, None, None, None, None)
     assert result.is_rhel
     assert not result.is_convert2rhelable
     assert result.release == "RHEL"
     assert 'build_info' not in result.reasons
+    # uname + rpms not sufficient
+    result = OSRelease(uname7, None, rpms7, None, None)
+    assert result.is_rhel
+    assert not result.is_convert2rhelable
+    assert result.release == "RHEL"
+    assert 'build_info' not in result.reasons
+    # dmesg + uname + rpms IS sufficient
+    result = OSRelease(uname7, dmesg7, rpms7, None, None)
+    assert not result.is_rhel
+    assert result.is_convert2rhelable
+    assert result.release == "CentOS"
+    assert 'build_info' not in result.reasons
 
-    dmesg = DmesgLineList(context_wrap(DMESG_CENTOS_8_5))
-    uname = Uname(context_wrap(UNAME_CENTOS_8_5))
-    result = OSRelease(None, dmesg, None, None, None)
+    dmesg8 = DmesgLineList(context_wrap(DMESG_CENTOS_8_5))
+    uname8 = Uname(context_wrap(UNAME_CENTOS_8_5))
+    rpms8 = InstalledRpms(context_wrap(RPMS_CENTOS_8_5_RAW))
+    rhrelease8 = RedhatRelease(context_wrap(REDHAT_RELEASE_CENTOS_8_5))
+    osrelease8 = OSReleaseParser(context_wrap(OS_RELEASE_CENTOS_8_5))
+    result = OSRelease(None, dmesg8, None, None, None)
     assert not result.is_rhel
     assert result.is_convert2rhelable
     assert result.release == "CentOS"
     assert result.reasons['build_info'] == DMESG_CENTOS_8_5
-    result = OSRelease(uname, dmesg, None, None, None)
+    result = OSRelease(uname8, dmesg8, None, None, None)
     assert not result.is_rhel
     assert result.is_convert2rhelable
     assert result.release == "CentOS"
     assert result.reasons['build_info'] == DMESG_CENTOS_8_5
     # CentOS uname is exactly the same as RHEL - if that's all we have to go
     # on then we can't tell.
-    result = OSRelease(uname, None, None, None, None)
+    result = OSRelease(uname8, None, None, None, None)
     assert result.is_rhel
     assert not result.is_convert2rhelable
     assert result.release == "RHEL"
     assert 'build_info' not in result.reasons
 
-    dmesg = DmesgLineList(context_wrap(DMESG_CENTOS_9STR))
-    uname = Uname(context_wrap(UNAME_CENTOS_9STR))
-    rpms = InstalledRpms(context_wrap(RPMS_CENTOS_9STR_RAW))
-    redhat_release = RedhatRelease(context_wrap(REDHAT_RELEASE_CENTOS_9STR))
-    os_release = OSReleaseParser(context_wrap(OS_RELEASE_CENTOS_9STR))
+    dmesg9 = DmesgLineList(context_wrap(DMESG_CENTOS_9STR))
+    uname9 = Uname(context_wrap(UNAME_CENTOS_9STR))
+    rpms9 = InstalledRpms(context_wrap(RPMS_CENTOS_9STR_RAW))
+    rhrelease9 = RedhatRelease(context_wrap(REDHAT_RELEASE_CENTOS_9STR))
+    osrelease9 = OSReleaseParser(context_wrap(OS_RELEASE_CENTOS_9STR))
     # From dmesg alone, because CentOS 9 is now compiled by redhat.com
     # servers, we can't determine if its CentOS or RHEL
-    result = OSRelease(None, dmesg, None, None, None)
+    result = OSRelease(None, dmesg9, None, None, None)
     assert result.is_rhel
     assert not result.is_convert2rhelable
     assert result.release == "RHEL"
     # and uname is not enough to differentiate either
-    result = OSRelease(uname, dmesg, None, None, None)
+    result = OSRelease(uname9, dmesg9, None, None, None)
     assert result.is_rhel
     assert not result.is_convert2rhelable
     assert result.release == "RHEL"
     # and even rpms can't help
-    result = OSRelease(uname, dmesg, rpms, None, None)
+    result = OSRelease(uname9, dmesg9, rpms9, None, None)
     assert result.is_rhel
     assert not result.is_convert2rhelable
     assert result.release == "RHEL"
