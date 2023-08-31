@@ -39,31 +39,24 @@ def _process_content_redaction(filepath, exclude, regex=False):
     /etc/insights-client/.exp.sed and and the contents of "exclude"
 
     filepath    file to modify
-    exclude     list of strings to redact
+    exclude     list of strings to redact (never be None or empty)
     regex       whether exclude is a list of regular expressions
 
     Returns the file contents with the specified data removed
     '''
     logger.debug('Processing %s...', filepath)
 
-    # password removal
-    sedcmd = Popen(['sed', '-rf', constants.default_sed_file, filepath], stdout=PIPE)
     # patterns removal
-    if exclude:
-        exclude_file = NamedTemporaryFile()
-        exclude_file.write("\n".join(exclude).encode('utf-8'))
-        exclude_file.flush()
-        if regex:
-            flag = '-E'
-        else:
-            flag = '-F'
-        grepcmd = Popen(['grep', '-v', flag, '-f', exclude_file.name], stdin=sedcmd.stdout, stdout=PIPE)
-        sedcmd.stdout.close()
-        stdout, stderr = grepcmd.communicate()
-        logger.debug('Process status: %s', grepcmd.returncode)
+    exclude_file = NamedTemporaryFile()
+    exclude_file.write("\n".join(exclude).encode('utf-8'))
+    exclude_file.flush()
+    if regex:
+        flag = '-E'
     else:
-        stdout, stderr = sedcmd.communicate()
-        logger.debug('Process status: %s', sedcmd.returncode)
+        flag = '-F'
+    grepcmd = Popen(['grep', '-v', flag, '-f', exclude_file.name, filepath], stdout=PIPE)
+    stdout, stderr = grepcmd.communicate()
+    logger.debug('Process status: %s', grepcmd.returncode)
     logger.debug('Process stderr: %s', stderr)
     return stdout
 
@@ -440,6 +433,9 @@ class DataCollector(object):
                 exclude = None
         if not exclude:
             logger.debug('Patterns section of blacklist configuration is empty.')
+            # Do not redact when exclude is None or empty
+            # - since the .exp.sed is skipped
+            return
 
         # TODO: consider implementing redact() in CoreCollector class rather than
         #   special handling here
