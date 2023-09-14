@@ -35,8 +35,7 @@ SOSCLEANER_LOGGER.setLevel(logging.ERROR)
 
 def _process_content_redaction(filepath, exclude, regex=False):
     '''
-    Redact content from a file, based on
-    /etc/insights-client/.exp.sed and and the contents of "exclude"
+    Redact content from a file, based on the contents of "exclude"
 
     filepath    file to modify
     exclude     list of strings to redact (never be None or empty)
@@ -403,7 +402,7 @@ class DataCollector(object):
 
     def redact(self, rm_conf):
         '''
-        Perform data redaction (password sed command and patterns),
+        Perform data redaction (patterns),
         write data to the archive in place
         '''
         logger.debug('Running content redaction...')
