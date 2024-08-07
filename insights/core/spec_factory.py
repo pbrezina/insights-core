@@ -17,7 +17,6 @@ from insights.core.context import ExecutionContext, FSRoots, HostContext
 from insights.core.exceptions import (
         BlacklistedSpec,
         ContentException,
-        NoFilterException,
         SkipComponent)
 from insights.core.plugins import component, datasource, is_datasource
 from insights.core.serde import deserializer, serializer
@@ -191,7 +190,7 @@ class FileProvider(ContentProvider):
             if (self.ds and filters.ENABLED and
                     any(s.filterable for s in dr.get_registry_points(self.ds)) and
                     not filters.get_filters(self.ds)):
-                raise NoFilterException("Skipping %s due to no filters." % dr.get_name(self.ds))
+                raise ContentException("Skipping %s due to no filters." % dr.get_name(self.ds))
             # 2.2 Customer Prohibits Collection
             if not blacklist.allow_file("/" + self.relative_path):
                 log.warning("WARNING: Skipping file %s", "/" + self.relative_path)
@@ -367,7 +366,7 @@ class CommandOutputProvider(ContentProvider):
             if (self.ds and filters.ENABLED and
                     any(s.filterable for s in dr.get_registry_points(self.ds)) and
                     not filters.get_filters(self.ds)):
-                raise NoFilterException("Skipping %s due to no filters." % dr.get_name(self.ds))
+                raise ContentException("Skipping %s due to no filters." % dr.get_name(self.ds))
             # 2.2 Customer Prohibits Collection
             if not blacklist.allow_command(self.cmd):
                 log.warning("WARNING: Skipping command %s", self.cmd)
@@ -702,6 +701,8 @@ class glob_file(object):
                     results.append(self.kind(
                         path[len(root):], root=root, save_as=self.save_as,
                         ds=self, ctx=ctx, cleaner=cleaner))
+                except ContentException as ce:
+                    log.debug(ce)
                 except Exception:
                     log.debug(traceback.format_exc())
         if results:
@@ -770,8 +771,8 @@ class first_file(object):
                 return self.kind(
                         ctx.locate_path(p), root=root, save_as=self.save_as,
                         ds=self, ctx=ctx, cleaner=cleaner)
-            except NoFilterException as nfe:
-                raise nfe
+            except ContentException as ce:
+                log.debug(ce)
             except Exception:
                 pass
         raise ContentException("None of [%s] found." % ', '.join(self.paths))
