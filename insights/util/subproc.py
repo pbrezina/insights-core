@@ -5,10 +5,15 @@ import signal
 import six
 import sys
 
-from subprocess import Popen, PIPE, STDOUT, DEVNULL
+from subprocess import Popen, PIPE, STDOUT
 
 from insights.core.exceptions import CalledProcessError
 from insights.util import which
+
+try:
+    from subprocess import DEVNULL
+except:
+    DEVNULL = open(os.devnull, 'w')
 
 log = logging.getLogger(__name__)
 
