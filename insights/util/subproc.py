@@ -5,7 +5,7 @@ import signal
 import six
 import sys
 
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE, STDOUT, DEVNULL
 
 from insights.core.exceptions import CalledProcessError
 from insights.util import which
@@ -57,15 +57,19 @@ class Pipeline(object):
     def _build_pipes(self, out_stream=PIPE):
         log.debug("Executing: %s" % str(self.cmds))
         if len(self.cmds) == 1:
-            return Popen(self.cmds[0], bufsize=self.bufsize, stderr=STDOUT, stdout=out_stream, env=self.env)
+            return Popen(self.cmds[0], bufsize=self.bufsize, stdin=DEVNULL,
+                         stderr=STDOUT, stdout=out_stream, env=self.env)
 
-        stdout = Popen(self.cmds[0], bufsize=self.bufsize, stderr=STDOUT, stdout=PIPE, env=self.env).stdout
+        stdout = Popen(self.cmds[0], bufsize=self.bufsize, stdin=DEVNULL,
+                       stderr=STDOUT, stdout=PIPE, env=self.env).stdout
         last = len(self.cmds) - 2
         for i, arg in enumerate(self.cmds[1:]):
             if i < last:
-                stdout = Popen(arg, bufsize=self.bufsize, stdin=stdout, stderr=STDOUT, stdout=PIPE, env=self.env).stdout
+                stdout = Popen(arg, bufsize=self.bufsize, stdin=stdout,
+                               stderr=STDOUT, stdout=PIPE, env=self.env).stdout
             else:
-                return Popen(arg, bufsize=self.bufsize, stdin=stdout, stderr=STDOUT, stdout=out_stream, env=self.env)
+                return Popen(arg, bufsize=self.bufsize, stdin=stdout,
+                             stderr=STDOUT, stdout=out_stream, env=self.env)
 
     def __call__(self, keep_rc=False):
         """
